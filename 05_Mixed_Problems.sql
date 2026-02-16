@@ -130,4 +130,5 @@ JOIN sales_reps sr
 ON t1.sales_rep_id = sr.id
 WHERE account_count >
               (SELECT avg_account_count
+
                FROM t2);
