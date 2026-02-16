@@ -1,39 +1,24 @@
 # SQL Practice Portfolio
 
-This repository demonstrates structured SQL practice focused on business-style analytical problems.
+This repository contains structured SQL practice covering:
 
-Each problem includes:
-- Clear question
-- Structured rewrite (4-step breakdown)
-- Business logic explanation
-- Final SQL query
-
-Topics Covered:
-- SQL Basics
-- Aggregations & Grouping
-- Multi-table Joins
+- Basics (SELECT, WHERE, ORDER BY, LIMIT)
+- Aggregations
+- Joins
 - Subqueries
-- CTEs
+- Common Table Expressions (CTEs)
 - Mixed Business Problems
+- Mini Sales Analysis Project
 
-Focus Areas:
-- Revenue analysis
-- Sales performance analysis
-- Regional performance comparison
-- Customer behavior insights
-- Order trend analysis
+Each SQL file contains:
+- Business Question
+- Rewrite (thinking breakdown)
+- Logic
+- Final SQL Query
+
+Goal: Build strong foundations for Data Analyst / SQL Analyst / Reporting Analyst roles.
 
 Tools Used:
 - PostgreSQL / MySQL
 - VS Code
-
-Goal:
-Build strong foundations for Data Analyst, SQL Analyst, MIS, and Reporting roles.
-
-Status:
-✔ Basics
-✔ Aggregations
-✔ Joins
-✔ Subqueries
-⏳ CTEs (In Progress)
-⏳ Mixed Problems (In Progress)
+- Git & GitHub
