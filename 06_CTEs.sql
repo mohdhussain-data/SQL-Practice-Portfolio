@@ -97,3 +97,86 @@ SELECT t3.region,
        COUNT(*) AS rep_count
 FROM t3
 GROUP BY t3.region;
+
+
+/*QUESTION:
+Which customers have an average order value greater than the overall average order value?
+
+REWRITE:
+1) Final Output: Multiple rows - account_id or name.
+2) Group/Scope: Group orders by account.
+3) Selection Logic: Keep only customers whose average order value is greater than the overall average order value.
+4) Final Calculation: AVG(total_amt_usd) for each account compared against the overall average order value.
+
+LOGIC:
+First calculate AVG(total_amt_usd) for each account. Calculate the average of the per-account average order values.
+Keep only accounts whose AVG(total_amt_usd) is greater than that overall average order value.*/
+
+WITH t1 AS (SELECT account_id,
+                   AVG(total_amt_usd) AS avg_order_value
+            FROM orders
+            GROUP BY account_id),
+
+     t2 AS (SELECT AVG(avg_order_value) AS overall_avg_order_value
+            FROM t1)
+
+SELECT account_id
+FROM t1
+CROSS JOIN t2
+WHERE t1.avg_order_value > t2.overall_avg_order_value;
+
+
+/*QUESTION:
+Which accounts have placed more orders than the average number of orders per account?
+
+REWRITE:
+1) Final Output: Multiple rows - account_id or name.
+2) Group/Scope: Group orders by account.
+3) Selection Logic: First calculate COUNT(*) for each account. Then calculate the average of these counts.
+                    Keep only accounts whose total order count is greater than the average order count.
+4) Final Calculation: COUNT(*) for each account compared against AVG of those counts.
+
+LOGIC:
+First COUNT(*) for each account. Then calculate the average of these counts.
+Return only accounts whose COUNT(*) is more than that average.*/
+
+WITH t1 AS (SELECT account_id,
+                   COUNT(*) AS total_orders
+            FROM orders
+            GROUP BY account_id),
+
+     t2 AS (SELECT AVG(total_orders) AS avg_orders
+            FROM t1)
+
+SELECT t1.account_id
+FROM t1
+CROSS JOIN t2
+WHERE t1.total_orders > t2.avg_orders;
+
+
+/*QUESTION:
+Which sales reps manage more accounts than the average number of accounts per sales rep?
+
+REWRITE:
+1) Final Output: Multiple rows - sales rep id.
+2) Group/Scope: Group accounts by sales rep id.
+3) Selection Logic: Calculate number of accounts managed by each sales rep. Calculate the average of those counts.
+                    Keep only sales reps whose count is greater than the average.
+4) Final Calculation: COUNT(*) per sales rep compared against AVG of those counts.
+
+LOGIC:
+First calculate COUNT(*) of accounts for each sales rep. Then calculate the average of these counts.
+Return only sales reps whose count is greater than that average.*/
+
+WITH t1 AS (SELECT sales_rep_id,
+                   COUNT(*) AS total_accounts
+            FROM accounts
+            GROUP BY sales_rep_id),
+
+     t2 AS (SELECT AVG(total_accounts) AS avg_accounts
+            FROM t1)
+
+SELECT t1.sales_rep_id
+FROM t1
+CROSS JOIN t2
+WHERE t1.total_accounts > t2.avg_accounts;  

@@ -130,5 +130,67 @@ JOIN sales_reps sr
 ON t1.sales_rep_id = sr.id
 WHERE account_count >
               (SELECT avg_account_count
-
                FROM t2);
+
+
+/*QUESTION:
+Which regions have total revenue greater than the average regional revenue?
+
+REWRITE:
+1) Final Output: Multiple rows - region_name.
+2) Group/Scope: Group orders by region.
+3) Selection Logic: Calculate total revenue for each region. Calculate the average of those totals.
+                    Keep only regions whose total revenue is greater than that average.
+4) Final Calculation: SUM(total_amt_usd) per region compared against AVG of those totals.
+
+LOGIC:
+First calculate SUM(total_amt_usd) for each region. Then calculate AVG of those totals.
+Return only regions whose SUM(total_amt_usd) is greater than that average value.*/
+
+WITH t1 AS (SELECT r.name AS region,
+                   SUM(o.total_amt_usd) AS total_revenue_per_region
+            FROM region r
+            JOIN sales_reps sr
+            ON r.id = sr.region_id
+            JOIN accounts a
+            ON a.sales_rep_id = sr.id
+            JOIN orders o
+            ON o.account_id = a.id
+            GROUP BY r.name),
+
+       t2 AS (SELECT AVG(total_revenue_per_region) AS avg_revenue
+            FROM t1)
+
+SELECT region
+FROM t1
+WHERE t1.total_revenue_per_region >
+              (SELECT avg_revenue      --Alternate approach could use CROSS JOIN instead of subquery.
+               FROM t2);
+
+
+/*QUESTION:
+Which channels have more web events than the average number of web events per channel?
+
+REWRITE:
+1) Final Output: Multiple rows - channel name.
+2) Group/Scope: Group events by channel.
+3) Selection Logic: Calculate count of web events for each channel. Calculate the average of those counts.
+                    Keep only channels that have more web events than that average.
+4) Final Calculation: COUNT(*) per channel compared against AVG of those counts.
+
+LOGIC:
+First calculate number of events COUNT(*) for each channel. Then calculate the AVG of those counts.
+Keep only channels that have COUNT(*) greater than that AVG.*/
+
+WITH t1 AS (SELECT channel,
+                   COUNT(*) AS event_count
+            FROM web_events
+            GROUP BY channel),
+
+     t2 AS (SELECT AVG(event_count) AS avg_event
+            FROM t1)
+
+SELECT channel
+FROM t1
+CROSS JOIN t2
+WHERE t1.event_count > t2.avg_event;
