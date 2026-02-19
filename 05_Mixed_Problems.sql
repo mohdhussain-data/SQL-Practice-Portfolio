@@ -194,3 +194,143 @@ SELECT channel
 FROM t1
 CROSS JOIN t2
 WHERE t1.event_count > t2.avg_event;
+
+
+/*QUESTION:
+Which accounts have average order value greater than the overall average order value?
+
+REWRITE:
+1) Final Output: Multiple rows - account_name.
+2) Group/Scope: Group orders by accounts.
+3) Selection Logic: Keep only customers whose average order value is greater than the overall average order value.
+4) Final Calculation: AVG(total_amt_usd) for each account compared against the overall average order value.
+
+LOGIC:
+First calculate AVG(total_amt_usd) for each account. Calculate the average of the per-account average order values.
+Keep only accounts whose AVG(total_amt_usd) is greater than that overall average order value.*/
+
+WITH t1 AS (SELECT o.account_id,
+                   a.name AS account_name,
+                   AVG(o.total_amt_usd) AS avg_order_value
+            FROM orders o
+            JOIN accounts a
+            ON o.account_id = a.id
+            GROUP BY o.account_id, a.name),
+
+     t2 AS (SELECT AVG(avg_order_value) AS overall_avg_order_value
+            FROM t1)
+
+SELECT account_name
+FROM t1
+WHERE t1.avg_order_value >
+              (SELECT overall_avg_order_value
+               FROM t2);
+
+
+/*QUESTION:
+Which accounts spent more than the customer who bought the most standard_qty paper?
+
+REWRITE:
+1) Final Output: Multiple rows - account_name or account_id.
+2) Group/Scope: Group orders by account.
+3) Selection Logic: Identify the account with the highest SUM(standard_qty). Get that account's total SUM(total_amt_usd).
+                    Compare every account's total revenue to that value.
+4) Final Calculation: SUM(total_amt_usd) for each account compared against reference value.
+
+LOGIC:
+First find the account that purchased the most standard_qty. Then calculate that account's total spending.
+Return accounts whose total spending is greater than that amount.*/
+
+WITH t1 AS (SELECT account_id,
+                   SUM(standard_qty) AS total_standard
+            FROM orders
+            GROUP BY account_id
+            ORDER BY total_standard DESC
+            LIMIT 1),
+
+     t3 AS (SELECT account_id,
+                   SUM(total_amt_usd) AS total_spend
+            FROM orders
+            GROUP BY account_id)
+
+SELECT account_id
+FROM t3
+WHERE total_spend >
+              (SELECT SUM(total_amt_usd)
+               FROM orders
+               WHERE account_id = (SELECT account_id
+                                   FROM t1));
+
+
+/*QUESTION:
+For each region, which sales rep has the highest total revenue?
+
+REWRITE:
+1) Final Output: Multiple rows - region, sales_rep_id or name, and total revenue.
+2) Group/Scope: Group by region and sales rep to calculate total revenue per rep inside each region.
+3) Selection Logic: For each region:
+                    Calculate total revenue for every sales rep.
+                    Identify the maximum total revenue within that region.
+                    Keep only the sales rep whose revenue equals that maximum.
+4) Final Calculation: SUM(total_amt_usd) per sales_rep per region. Then, select MAX(total_revenue) inside each region.
+
+LOGIC:
+First calculate total revenue for each sales rep inside each region. Then within each region, find the highest revenue.
+Return the sales rep whose total revenue equals that highest value.*/
+
+WITH t1 AS (SELECT r.name AS region,
+                   sr.name AS sales_rep_name,
+                   SUM(o.total_amt_usd) AS total_revenue
+            FROM region r
+            JOIN sales_reps sr
+            ON r.id = sr.region_id
+            JOIN accounts a
+            ON a.sales_rep_id = sr.id
+            JOIN orders o
+            ON o.account_id = a.id
+            GROUP BY r.name, sr.name),
+
+     t2 AS (SELECT region,
+                   MAX(total_revenue) AS max_revenue
+            FROM t1
+            GROUP BY region)
+
+SELECT t1.region,
+       t1.sales_rep_name,
+       t1.total_revenue
+FROM t1
+JOIN t2
+ON t1.region = t2.region
+AND t1.total_revenue = t2.max_revenue;
+
+
+/*QUESTION:
+For each account, how many web_events occurred for the channel with the most events for that account?
+
+REWRITE:
+1) Final Output: Multiple rows - account_id or name, and max_event_count.
+2) Group/Scope: Group web_events by account and channel.
+3) Selection Logic:For each account:
+                   Count events per channel.
+                   Find the maximum count.
+4) Final Calculation: COUNT(*) per channel. Then MAX(count).
+
+LOGIC:
+First calculate how many web events each account has per channel.
+Then, for each account, find the maximum of those counts.
+Return that maximum value as the number of events for the channel with the most activity.*/
+
+WITH t1 AS (SELECT account_id,
+                   channel,
+                   COUNT(*) AS event_count
+            FROM web_events
+            GROUP BY account_id, channel),
+
+     t2 AS (SELECT account_id,
+                   MAX(event_count) AS max_event_count
+            FROM t1
+            GROUP BY account_id)
+
+SELECT account_id,
+       max_event_count
+FROM t2;

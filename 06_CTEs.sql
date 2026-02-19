@@ -120,7 +120,7 @@ WITH t1 AS (SELECT account_id,
      t2 AS (SELECT AVG(avg_order_value) AS overall_avg_order_value
             FROM t1)
 
-SELECT account_id
+SELECT t1.account_id
 FROM t1
 CROSS JOIN t2
 WHERE t1.avg_order_value > t2.overall_avg_order_value;
@@ -179,4 +179,71 @@ WITH t1 AS (SELECT sales_rep_id,
 SELECT t1.sales_rep_id
 FROM t1
 CROSS JOIN t2
-WHERE t1.total_accounts > t2.avg_accounts;  
+WHERE t1.total_accounts > t2.avg_accounts;
+
+
+/*QUESTION:
+For each region, what is the total revenue and the number of orders?
+
+REWRITE:
+1) Final Output: Multiple rows - region_id or name, total_revenue, and num_orders.
+2) Group/Scope: Group orders by region.
+3) Selection Logic: For each region:
+                    Calculate SUM(total_amt_usd).
+                    Calculate number of orders-COUNT(*).
+4) Final Calculation: SUM(total_amt_usd), and COUNT(*) for each region.
+
+LOGIC:
+First calculate the total revenue for each region. Then calculate the total number of orders per region.*/
+
+WITH t1 AS (SELECT r.name AS region,
+                   SUM(o.total_amt_usd) AS total_revenue,
+                   COUNT(*) AS total_orders
+            FROM region r
+            JOIN sales_reps sr
+            ON r.id = sr.region_id
+            JOIN accounts a
+            ON a.sales_rep_id = sr.id
+            JOIN orders o
+            ON o.account_id = a.id
+            GROUP BY r.name)
+
+SELECT region,
+       total_revenue,
+       total_orders
+FROM t1;
+
+
+/*QUESTION:
+Which accounts have total standard_qty greater than the total standard_qty of the account with the highest poster_qty?
+
+REWRITE:
+1) Final Output: account_id or name.
+2) Group/Scope: Group orders by account.
+3) Selection Logic: First find the account with the highest poster_qty-SUM(poster_qty).
+                    Find the total standard_qty of that account-SUM(standard_qty).
+                    Compare every account's SUM(standard_qty) against that value.
+4) Final Calculation: SUM(standard_qty) per account compared against total standard_qty of the extracted account.
+
+LOGIC:
+Find account with the highest poster_qty. Calculate total standard_qty of that account.
+Return accounts whose total standard_qty is greater than that value.*/
+
+WITH t1 AS (SELECT account_id,
+                   SUM(poster_qty) AS total_poster,
+                   SUM(standard_qty) AS total_standard
+            FROM orders
+            GROUP BY account_id),
+
+     t2 AS (SELECT total_standard
+            FROM t1
+            ORDER BY total_poster DESC
+            LIMIT 1)
+
+SELECT account_id
+FROM t1
+WHERE total_standard >
+              (SELECT total_standard
+               FROM t2);
+
+
