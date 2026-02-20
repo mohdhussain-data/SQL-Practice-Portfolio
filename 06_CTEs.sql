@@ -247,3 +247,51 @@ WHERE total_standard >
                FROM t2);
 
 
+/*QUESTION:
+What is the lifetime average total_amt_usd for the top 10 spending accounts?
+
+REWRITE:
+1) Final Output: One row - average of the top 10 spending accounts.
+2) Group/Scope: Group by accounts.
+3) Seleciton Logic: First calculate the total spending SUM(total_amt_usd) for each account.
+                    Find the top 10 spending accounts. Calculate the AVG of those accounts.
+4) Final Calculation: AVG of the top 10 accounts.
+
+LOGIC:
+First calculate the total spending for each account. Then find the top 10 spending accounts.
+Finally, calculate the average of those accounts.*/
+
+WITH t1 AS (SELECT account_id,
+                   SUM(total_amt_usd) AS total_spending
+            FROM orders
+            GROUP BY account_id
+            ORDER BY total_spending DESC
+            LIMIT 10)
+
+SELECT AVG(total_spending) AS avg_spending
+FROM t1;  
+
+
+/*QUESTION:
+For each channel, how many web events occurred and what is the average number of events per account?
+
+REWRITE:
+1) Final Output: channel, total_events, avg_events_per_account.
+2) Group/Scope: Group by channel and account first, then by channel.
+3) Selection Logic: Count events per account per channel.
+4) Final Calculation: SUM and AVG of those counts per channel.
+
+LOGIC:
+First count events per account per channel. Then aggregate per channel to get total and average.*/
+
+WITH t1 AS (SELECT channel,
+                   account_id,
+                   COUNT(*) AS event_count
+            FROM web_events
+            GROUP BY channel, account_id)
+
+SELECT channel,
+       SUM(event_count) AS total_events,
+       AVG(event_count) AS avg_events_per_account
+FROM t1
+GROUP BY channel;

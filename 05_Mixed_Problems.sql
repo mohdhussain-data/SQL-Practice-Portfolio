@@ -334,3 +334,71 @@ WITH t1 AS (SELECT account_id,
 SELECT account_id,
        max_event_count
 FROM t2;
+
+
+/*QUESTION:
+Which accounts have total poster_qty greater than the average poster_qty across all accounts?
+
+REWRITE:
+1) Final Output: Multiple rows - account_id or name.
+2) Group/Scope: Group by accounts.
+3) Selection Logic: First calculate the total SUM(poster_qty) for each account. Then calculate the AVG of these totals.
+                    Keep only accounts whose total SUM(poster_qty) is greater than that average.
+4) Final Calculation: SUM(poster_qty) per account compared against the extracted average value.
+
+LOGIC:
+First calculate the total poster_qty of each account. Then calculate the average of these totals.
+Return accounts whose total poster_qty is greater than that average.*/
+
+WITH t1 AS (SELECT o.account_id,
+                   a.name AS account_name,
+                   SUM(o.poster_qty) AS total_poster
+            FROM orders o
+            JOIN accounts a
+            ON o.account_id = a.id
+            GROUP BY o.account_id, a.name)
+
+SELECT account_id,
+       account_name
+FROM t1
+WHERE total_poster >
+              (SELECT AVG(total_poster)
+               FROM t1);
+
+
+/*QUESTION:
+Which sales reps generated more total revenue than the average of the top 10 sales reps?
+
+REWRITE:
+1) Final Output: Multiple rows - sales_rep_id or name.
+2) Group/Scope: Group by sales reps.
+3) Selection Logic: First calculate the total revenue SUM(total_amt_usd) for each sales rep.
+                    Then find the top 10 sales reps by total revenue. Calculate the AVG of these sales reps.
+                    Keep only sales reps whose total revenue SUM(total_amt_usd) is greater than that average.
+4) Final Calculation: SUM(total_amt_usd) per sales rep compared against the AVG of total revenue of the top reps.
+
+LOGIC:
+First calculate the total revenue of each sales rep. Find the top 10 sales reps by total revenue.
+Calculate the average of those sales reps. Return reps whose total revenue is greater than that average.*/
+
+WITH t1 AS (SELECT sr.id AS sales_rep_id,
+                   sr.name AS sales_rep_name,
+                   SUM(o.total_amt_usd) AS total_revenue_per_rep
+            FROM sales_reps sr
+            JOIN accounts a
+            ON sr.id = a.sales_rep_id
+            JOIN orders o
+            ON o.account_id = a.id
+            GROUP BY sr.id, sr.name),
+
+     t2 AS (SELECT total_revenue_per_rep
+            FROM t1
+            ORDER BY total_revenue_per_rep DESC
+            LIMIT 10)
+
+SELECT sales_rep_id,
+       sales_rep_name
+FROM t1
+WHERE total_revenue_per_rep >
+              (SELECT AVG(total_revenue_per_rep)
+              FROM t2);
