@@ -402,3 +402,112 @@ FROM t1
 WHERE total_revenue_per_rep >
               (SELECT AVG(total_revenue_per_rep)
               FROM t2);
+
+
+/*QUESTION:
+Which regions have more accounts than the average number of accounts per region?
+
+REWRITE:
+1) Final Output: Multiple rows - region_name, and count of accounts(optional).
+2) Group/Scope: Group by region.
+3) Seleciton Logic: First calculate number of accounts COUNT(*) per region. Then find the AVG of those accounts.
+                    Keep only regioins whose COUNT(*) is greater than that average.
+4) Final Calcultion: COUNT(*) per region compared against AVG of the above counts.
+
+LOGIC:
+First find the total count of accounts for each region. Calculate the average of that counts.
+Return regions that have total number of accounts more than that average value.*/
+
+WITH t1 AS (SELECT r.name AS region,
+                   COUNT(*) AS account_count
+            FROM region r
+            JOIN sales_reps sr
+            ON r.id = sr.region_id
+            JOIN accounts a
+            ON a.sales_rep_id = sr.id
+            GROUP BY r.name)
+
+SELECT region
+FROM t1
+WHERE account_count >
+              (SELECT AVG(account_count)
+               FROM t1);
+
+
+/*QUESTION:
+Which customers have lifetime average order value greater than the lifetime average order value of the top 5 customers by total revenue?
+
+REWRITE:
+1) Final Output: Multiple rows - account_id or name.
+2) Group/Scope: Group orders by accounts.
+3) Selection Logic: First calculate the total revenue SUM(total_amt_usd) for each account. Find the top 5 customers by total revenue.
+                    Calculate the AVG(total_amt_usd) of that top customers.
+                    Keep only accounts whose lifetime average AVG(total_amt_usd) is greater than the lifetime AVG of the top customers.
+4) Final Calculation: AVG(total_amt_usd) per account compared against lifetime average of those top customers.
+
+LOGIC:
+First calculate the total revenue of each account. Find the top 5 customers by total revenue.
+Then calculate the lifetime average of that customers. Keep only accounts whose lifetime average order value is greater than the average of that top customers.*/
+
+WITH account_metrics AS (SELECT o.account_id,
+                   a.name AS account_name,
+                   SUM(o.total_amt_usd) AS total_revenue,
+                   AVG(o.total_amt_usd) AS avg_order_value
+            FROM orders o
+            JOIN accounts a
+            ON o.account_id = a.id
+            GROUP BY o.account_id, a.name),
+
+     top5_by_revenue AS (SELECT avg_order_value
+            FROM account_metrics
+            ORDER BY total_revenue DESC
+            LIMIT 5)
+
+SELECT account_id,
+       account_name
+FROM account_metrics
+WHERE avg_order_value >
+              (SELECT AVG(avg_order_value)
+               FROM top5_by_revenue);
+
+
+/*QUESTION:
+Which accounts have total revenue greater than the region's average revenue where they belong?
+
+REWRITE:
+1) Final Output: Multiple rows - account_id or account_name.
+2) Group/Scope: Group by account.
+3) Selection Logic: First calculate total revenue SUM(total_amt_usd) per account.
+                    Then calculate the average of account total revenues per region.
+                    Join accounts' total revenue to regions' average revenue.
+4) Final Calculation: Compare account total vs it's region average.
+
+LOGIC:
+First calculate total revenue for each account along with its region.
+Then calculate the average of these account revenues for each region.
+Return only accounts whose total revenue is greater than their region's average.*/
+
+WITH account_revenue AS (SELECT a.id AS account_id,
+                                a.name AS account_name,
+                                r.name AS region,
+                                SUM(o.total_amt_usd) AS total_revenue
+                         FROM accounts a
+                         JOIN orders o
+                         ON a.id = o.account_id
+                         JOIN sales_reps sr
+                         ON sr.id = a.sales_rep_id
+                         JOIN region r
+                         ON r.id = sr.region_id
+                         GROUP BY a.id, a.name, r.name),
+
+     region_avg_revenue AS (SELECT region,
+                                   AVG(total_revenue) AS avg_revenue
+                            FROM account_revenue
+                            GROUP BY region)
+
+SELECT ar.account_id,
+       ar.account_name
+FROM account_revenue ar
+JOIN region_avg_revenue rr
+ON ar.region = rr.region
+WHERE ar.total_revenue > rr.avg_revenue;
