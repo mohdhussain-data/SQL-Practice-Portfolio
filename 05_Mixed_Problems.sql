@@ -511,3 +511,106 @@ FROM account_revenue ar
 JOIN region_avg_revenue rr
 ON ar.region = rr.region
 WHERE ar.total_revenue > rr.avg_revenue;
+
+
+/*QUESTION:
+For each region, what is the average order value?
+
+REWRITE:
+1) Final Output: Multiple rows - region_name, and average order value.
+2) Group/Scope: Group orders by region.
+3) Selection Logic: Join orders - accounts - sales reps - region.
+4) Final Calculation: AVG(total_amt_usd) per region.
+
+LOGIC:
+Join orders to their region and compute AVG(total_amt_usd) for each region.*/
+
+SELECT r.name AS region,
+       AVG(o.total_amt_usd) AS avg_order_value
+FROM region r
+JOIN sales_reps sr
+ON r.id = sr.region_id
+JOIN accounts a
+ON a.sales_rep_id = sr.id
+JOIN orders o
+ON a.id = o.account_id
+GROUP BY r.name;
+
+
+/*QUESTION:
+Which sales reps have total revenue greater than their region's average revenue?
+
+REWRITE:
+1) Final Output: Multiple rows - sales_rep_id or name.
+2) Group/Scope: First group orders by sales reps to get total revenue per rep. Then group that totals by region to get average of rep totals.
+3) Selection Logic: First calculate total revenue SUM(total_amt_usd) per sales rep.
+                    Then calculate AVG of those rep totals to get average revenue per region.
+                    Keep only sales reps whose total revenue SUM(total_amt_usd) is greater than average revenue per region.
+4) Final Calculation: SUM(total_amt_usd) per rep compared against AVG of their region.
+
+LOGIC:
+First calcualate total revenue per sales rep. Then calculate average of those rep totals and group by region.
+Return sales reps whose total revenue is greater than their region's average revenue.*/
+
+WITH rep_revenue AS (SELECT sr.id AS sales_rep_id,
+                            sr.name AS sales_rep_name,
+                            r.name AS region,
+                            SUM(o.total_amt_usd) AS rep_total_revenue
+                     FROM region r  
+                     JOIN sales_reps sr
+                     ON r.id = sr.region_id
+                     JOIN accounts a
+                     ON a.sales_rep_id = sr.id
+                     JOIN orders o
+                     ON o.account_id = a.id
+                     GROUP BY sr.id, sr.name, r.name),
+
+     region_avg AS (SELECT region,
+                   AVG(rep_total_revenue) AS avg_revenue_per_region
+            FROM rep_revenue
+            GROUP BY region)
+
+SELECT rr.sales_rep_id,
+       rr.sales_rep_name
+FROM rep_revenue rr
+JOIN region_avg ra
+ON rr.region = ra.region
+WHERE rr.rep_total_revenue > ra.avg_revenue_per_region;
+
+
+/*QUESTION:
+Which customers have more web events than the customer with the highest total revenue?
+
+REWRITE:
+1) Final Output: Multiple rows - account_id or name.
+2) Group/Scope: Group events by accounts.
+3) Selection Logic: Find customer with highest total revenue.
+                    Get that customer's web event count.
+                    Compare all customers' event counts to that value.
+4) Final Calculation: COUNT(*) per account.
+
+LOGIC:
+Find the customer who spent the most. Find how many web events that customer has.
+Return customers who have more web events than that number.*/
+
+WITH top_customer AS (SELECT account_id,
+                             SUM(total_amt_usd) AS total_revenue
+                     FROM orders
+                     GROUP BY account_id
+                     ORDER BY total_revenue DESC
+                     LIMIT 1),
+
+     events_per_account AS (SELECT account_id,
+                                   COUNT(*) AS event_count
+                            FROM web_events
+                            GROUP BY account_id)
+
+SELECT account_id
+FROM events_per_account
+WHERE event_count >
+              (SELECT event_count
+               FROM events_per_account
+               WHERE account_id = (SELECT account_id
+                                   FROM top_customer));
+
+
