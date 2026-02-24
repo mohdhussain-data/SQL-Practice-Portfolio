@@ -614,3 +614,71 @@ WHERE event_count >
                                    FROM top_customer));
 
 
+/*QUESTION:
+Which channels generate more total orders than the average channel?
+
+REWRITE:
+1) Final Output: Multiple rows - channel name.
+2) Group/Scope: Group orders by channel.
+3) Selection Logic: First calculate total number of orders COUNT(*) per channel. Calculate the AVG of those counts.
+                    Keep only channels whose count > average.
+4) Final Calculation: COUNT(*) per channel.
+
+LOGIC:
+Count how many orders each channel has. Find the average of these counts.
+Return channels whose order count is greater than the average.*/
+
+WITH total_orders AS (SELECT w.channel,
+                             COUNT(*) AS total_orders_per_channel
+                      FROM web_events w
+                      JOIN orders o
+                      ON w.account_id = o.account_id
+                      GROUP BY w.channel),
+
+     avg_orders AS (SELECT AVG(total_orders_per_channel) AS avg_order
+            FROM total_orders)
+
+SELECT channel
+FROM total_orders
+WHERE total_orders_per_channel >
+        (SELECT avg_order
+         FROM avg_orders);
+
+
+/*QUESTION:
+Which accounts have both:
+                         total revenue above average and
+                         total orders above average.
+
+REWRITE:
+1) Final Output: Multiple rows - account_id or name.
+2) Group/Scope: Group by account.
+3) Selection Logic: First Calculate SUM(total_amt_usd) per account. Then calculate COUNT(*) per account to find total orders per account.
+                    Calculate the AVG of those total reveneues and total counts of orders.
+                    Keep only accounts whose total revenue and counts of orders > their average values.
+4) Final Calcualtion: SUM(total_amt_usd) per account and COUNT(*) per account.
+
+LOGIC:
+Compute total revenue per account. Find how many orders each account has.
+Find the average of both: total revenue and order counts.
+Return accounts whose total revenue and order count both > their average values.*/
+
+WITH total_revenue_total_orders AS (SELECT o.account_id,
+                                          a.name AS account_name,
+                                          SUM(o.total_amt_usd) AS total_revenue,
+                                          COUNT(*) AS total_orders
+                                   FROM orders o
+                                   JOIN accounts a
+                                   ON o.account_id = a.id
+                                   GROUP BY o.account_id, a.name),
+
+     avg_revenue_avg_orders AS (SELECT AVG(total_revenue) AS avg_revenue,
+                                      AVG(total_orders) AS avg_order
+                               FROM total_revenue_total_orders)
+
+SELECT account_id,
+       account_name
+FROM total_revenue_total_orders t
+CROSS JOIN avg_revenue_avg_orders a
+WHERE t.total_revenue > a.avg_revenue
+AND t.total_orders > a.avg_order;
