@@ -62,3 +62,25 @@ SELECT SUM
               END) * 1.0 /
        COUNT(*) AS proportion_starting_with_letter
 FROM accounts;
+
+
+/*QUESTION:
+Use the accounts table to create first and last name columns that hold the first and last names for the primary_poc.
+
+REWRITE:
+1) Final Output: Multiple rows - first_name and last_name.
+2) Group/Scope: No grouping required.
+3) Selection Logic: Use STRPOS to find the position of the space between first and last name.
+                    Extract characters before the space for first_name.
+                    Extract characters after the space for last_name.
+4) Final Calculation: Use LEFT and RIGHT (or SUBSTR) with STRPOS to separate the name.
+
+LOGIC:
+Find the position of the space in primary_poc.
+Extract everything before the space as first_name.
+Extract everything after the space as last_name.*/
+
+SELECT 
+    SUBSTR(primary_poc, 1, STRPOS(primary_poc, ' ') - 1) AS first_name,
+    SUBSTR(primary_poc, STRPOS(primary_poc, ' ') + 1) AS last_name
+FROM accounts;
