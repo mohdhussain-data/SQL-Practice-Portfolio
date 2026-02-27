@@ -84,3 +84,22 @@ SELECT
     SUBSTR(primary_poc, 1, STRPOS(primary_poc, ' ') - 1) AS first_name,
     SUBSTR(primary_poc, STRPOS(primary_poc, ' ') + 1) AS last_name
 FROM accounts;
+
+
+/*QUESTION:
+From the accounts table, extract the domain name from the website column (removing 'www.').
+
+REWRITE:
+1) Final Output: Multiple rows - domain_name.
+2) Group/Scope: No grouping required.
+3) Selection Logic: Find the position of 'www.' and remove it using SUBSTR.
+4) Final Calculation: Use STRPOS and SUBSTR to extract domain.
+
+LOGIC:
+Locate 'www.' in the website column
+Start extracting characters after 'www.'
+Return remaining portion as domain name.*/
+
+SELECT
+       SUBSTR(website, STRPOS(website, 'www.') + 4) AS domain_name
+FROM accounts;
