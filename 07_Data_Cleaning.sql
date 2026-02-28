@@ -103,3 +103,64 @@ Return remaining portion as domain name.*/
 SELECT
        SUBSTR(website, STRPOS(website, 'www.') + 4) AS domain_name
 FROM accounts;
+
+
+/*QUESTION:
+Each company in the accounts table wants to create an email address for each primary_poc.
+The email address should be the first name of the primary_poc . last name primary_poc @ company name .com.
+The format should be: first_name.last_name@companyname.com.
+
+REWRITE:
+1) Final Output: Multiple rows - email_address.
+2) Group/Scope: No grouping required.
+3) Selection Logic: Extract first name from primary_poc using SUBSTR and STRPOS.
+                    Extract last name from primary_poc using SUBSTR and STRPOS.
+                    Keep the company name as it is.
+4) Final Calculation: Concatenate first_name, '.', last_name, '@', company_name, and '.com'.
+                      Convert the final result to lower case.
+
+LOGIC:
+First create a CTE to extract first_name and last_name from primary_poc.
+Then build the email address by concatenating:
+first_name + '.' + last_name + '@' + company_name + '.com'.
+Convert the final string to lower case.*/
+
+WITH name_parts AS (SELECT primary_poc,
+                           name AS company_name,
+                           SUBSTR(primary_poc, 1, STRPOS(primary_poc, ' ')-1) AS first_name,
+                           SUBSTR(primary_poc, STRPOS(primary_poc, ' ')+1) AS last_name
+                    FROM accounts)
+
+SELECT LOWER(first_name || '.' || last_name || '@' || company_name || '.com') AS email_address
+FROM name_parts;
+
+
+/*QUESTION:
+Modify the previous email creation query so that all spaces are removed from the company name.
+The format should still be: first_name.last_name@companyname.com.
+
+REWRITE:
+1) Final Output: Multiple rows - email_address.
+2) Group/Scope: No grouping required.
+3) Selection Logic: Extract first name from primary_poc using SUBSTR and STRPOS.
+                    Extract last name from primary_poc using SUBSTR and STRPOS.
+                    Remove all spaces from company name using REPLACE.
+4) Final Calculation: Concatenate first_name, '.', last_name, '@', cleaned_company_name, and '.com'.
+                      Convert the final result to lower case.
+
+LOGIC:
+First create a CTE to extract first_name and last_name from primary_poc.
+Use REPLACE to remove spaces from the company name.
+Then build the email address in the format:
+first_name.last_name@companyname.com
+Convert the final string to lowercase.*/
+
+WITH name_parts AS (SELECT SUBSTR(primary_poc, 1, STRPOS(primary_poc, ' ') -1) AS first_name,
+                   SUBSTR(primary_poc, STRPOS(primary_poc, ' ') +1) AS last_name,
+                   REPLACE(name, ' ', '') AS company_name_clean
+            FROM accounts)
+
+SELECT LOWER(first_name || '.' || last_name || '@' || company_name_clean || '.com') AS email_address
+FROM name_parts;
+
+
