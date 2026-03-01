@@ -164,3 +164,32 @@ SELECT LOWER(first_name || '.' || last_name || '@' || company_name_clean || '.co
 FROM name_parts;
 
 
+/*QUESTION:
+The date column in the sf_crime_data table is stored as TEXT 
+in the format 'MM/DD/YYYY HH:MI:SS AM +0000'.
+Convert this column into the proper SQL DATE format (YYYY-MM-DD)
+using SUBSTR and CONCAT, and then CAST it to DATE.
+
+REWRITE:
+1) Final Output: Multiple rows - formatted_date.
+2) Group/Scope: No grouping required.
+3) Selection Logic:
+   - Extract year using SUBSTR(date, 7, 4).
+   - Extract month using SUBSTR(date, 1, 2).
+   - Extract day using SUBSTR(date, 4, 2).
+   - Rearrange into 'YYYY-MM-DD' format using CONCAT.
+4) Final Calculation:
+   CAST the rearranged string as DATE.
+
+LOGIC:
+The original date is stored as TEXT in MM/DD/YYYY format.
+Extract year, month, and day separately.
+Reorder them into YYYY-MM-DD format.
+Then convert the string into an actual DATE using CAST.*/
+
+SELECT CAST(
+            CONCAT(
+                   SUBSTR(date, 7, 4), '-',
+                   SUBSTR(date, 1, 2), '-',
+                   SUBSTR(date, 4, 2)) AS DATE) AS formatted_date
+FROM sf_crime_data;
