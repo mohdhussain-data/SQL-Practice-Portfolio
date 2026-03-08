@@ -229,3 +229,58 @@ SELECT id,
        LAG(total_amt_usd)
        OVER (PARTITION BY account_id ORDER BY occurred_at) AS order_value_change
 FROM orders;
+
+
+/*QUESTION:
+Segment orders into revenue quartiles based on their total order value to identify low-value and high-value purchases.
+
+REWRITE:
+1) Final Output: Multiple rows - account_id, occurred_at, total_amt_usd, revenue_quartile.
+2) Group/Scope: No partition required; segmentation is based on the entire dataset.
+3) Selection Logic: Order the dataset by total_amt_usd to rank orders from lowest to highest.
+4) Final Calculation: Use the NTILE() window function to divide the ordered dataset into
+                      four equal groups representing revenue quartiles.
+
+LOGIC:
+Orders vary significantly in value. To analyze how orders are distributed across different revenue levels,
+divide the dataset into four equal segments (quartiles) based on the order amount.
+First sort the orders by total_amt_usd. Then apply the NTILE(4) window function to assign each order to one of four revenue groups.*/
+
+SELECT account_id,
+       occurred_at,
+       total_amt_usd,
+       NTILE(4)
+       OVER (ORDER BY total_amt_usd) AS revenue_quartile
+FROM orders;
+
+
+/*QUESTION:
+Identify the highest value order placed by each account.
+
+REWRITE:
+1) Final Output: id, account_id, total_amt_usd.
+2) Group/Scope: Partition rows by account_id.
+3) Selection Logic: Rank orders within each account from highest to lowest order value.
+4) Final Calculation: Return only the highest ranked order for each account.
+
+LOGIC:
+Each account may have place multiple orders. To determine the most valuable purchase for each account,
+first divide the dataset into account groups using PARTITION BY account_id.
+Within each group, sort the orders by total_amt_usd in descending order so the largest order appears first.
+Use the ROW_NUMBER() window function to assign a ranking to each order within the account group.
+Finally filter the results to keep only rows where the rank equals 1,
+which represents the highest-value order for each account.*/
+
+WITH ranked_orders AS (SELECT id,
+                              account_id,
+                              total_amt_usd,
+                              ROW_NUMBER()
+                              OVER (PARTITION BY account_id ORDER BY total_amt_usd DESC)
+                              AS order_rank
+                      FROM orders)
+
+SELECT id,
+       account_id,
+       total_amt_usd
+FROM ranked_orders
+WHERE order_rank = 1;
