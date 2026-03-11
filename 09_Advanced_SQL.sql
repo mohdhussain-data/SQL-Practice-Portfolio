@@ -98,3 +98,39 @@ AND w2.occurred_at > w1.occurred_at
 AND w2.occurred_at <= w1.occurred_at + INTERVAL '1 day'
 AND w2.id <> w1.id
 ORDER BY w1.account_id, w1.occurred_at;
+
+
+/*QUESTION:
+Build a unified customer activity dataset by combining purchase activity and website interaction activity.
+Return a table that includes customer purchases from the orders table and customer website interactions from the web_events table.
+The result should contain the account_id, activity_time, activity_type, and activity_value to create a single chronological
+activity log for customer behavior analysis.
+
+REWRITE:
+1) Final Output: Multiple rows - account_id, activity_time, activity_type, activity_value.
+2) Group/Scope: No grouping required. The goal is to append activity records from two different sources.
+3) Selection Logic: Extract purchase activity from the orders table.
+                    Extract interaction activity from the web_events table.
+4) Final Calculation: Use UNION ALL to combine both datasets into one unified activity log.
+
+LOGIC:
+Customer behavior is recorded in multiple tables. The orders table captures purchase transactions,
+while the web_events table captures online transactions such as website visits and marketing channel engagement.
+To analyze overall engagement, analysts often need a single activity timeline that combines these different sources.
+1. Extract purchase records from the orders table and label them as order activity.
+2. Extract interaction records from the web_events table and label them using the marketing channel.
+3. Use UNION ALL to vertically append both datasets into one unified activity dataset.*/
+
+SELECT account_id,
+       occurred_at AS activity_time,
+       'order' AS activity_type,
+       total_amt_usd AS activity_value
+FROM orders
+
+UNION ALL
+
+SELECT account_id,
+       occurred_at AS activity_time,
+       channel AS activity_type,
+       NULL AS activity_value
+FROM web_events;
