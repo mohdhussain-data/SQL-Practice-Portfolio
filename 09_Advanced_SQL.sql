@@ -134,3 +134,34 @@ SELECT account_id,
        channel AS activity_type,
        NULL AS activity_value
 FROM web_events;
+
+
+/*QUESTION:
+Create a unified contact directory by combining account contacts and sales representatives into a single dataset.
+Return a list of contacts including the contact_name and contact_role.
+This allows the company to quickly view all business contacts regardless of whether they are customers or internal sales representatives.
+
+REWRITE:
+1) Final Output: Multiple rows - contact_name and contact_role.
+2) Group/Scope: No grouping required. Combine contacts from two tables.
+3) Selection Logic: Extract primary contacts from the accounts table.
+                    Extract sales representatives from the sales_reps table.
+4) Final Calculation: Use UNION to combine both datasets into one contact directory.
+
+LOGIC:
+Business communication often involves both external contacts (customer representatives) and internal contacts
+(sales representatives). These contacts are stored in separate tables. To create a unified directory:
+1. Extract primary_poc from the accounts table.
+2. Extract sales representative names from the sales_reps table.
+3. Use UNION to combine both lists while removing duplicates.
+This unified contact list can support reporting, outreach, or CRM systems.*/
+
+SELECT primary_poc AS contact_name,
+       'account contact' AS contact_role
+FROM accounts
+
+UNION
+
+SELECT name AS contact_name,
+       'sales rep' AS contact_role
+FROM sales_reps;
