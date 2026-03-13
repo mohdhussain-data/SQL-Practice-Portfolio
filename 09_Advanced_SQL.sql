@@ -165,3 +165,36 @@ UNION
 SELECT name AS contact_name,
        'sales rep' AS contact_role
 FROM sales_reps;
+
+
+/*QUESTION:
+Analyze customer engagement by determining how many website interactions each account has generated.
+Return the account_id, account_name, and total_web_events for each account.
+Because the web_events table can contain a large number of records, structure the query efficiently,
+so the join operates on a reduced dataset.
+
+REWRITE:
+1) Final Output: Multiple rows - account_id, account_name, total_web_events.
+2) Group/Scope: One row per account.
+3) Selection Logic: Aggregate the web_events table to count the number of events per account.
+                    Join the aggregated result with the accounts table.
+4) Final Calculation: Use COUNT(*) to calculate the total number of web events for each account.
+
+LOGIC:
+The web_events table can contain a large number of rows because it records every customer interaction on the website.
+Joining the full web_events table with accounts first would require the database to process many rows during the join.
+To improve efficiency:
+1. Aggregate the web_events table first to count the number of events per account.
+2. This produces a smaller dataset with one row per account.
+3. Join this smaller dataset with the accounts table.*/
+
+SELECT a.id AS account_id,
+       a.name AS account_name,
+       w.event_count AS total_web_events
+FROM accounts a
+JOIN
+       (SELECT account_id,
+              COUNT(*) AS event_count
+       FROM web_events
+       GROUP BY account_id) w
+ON a.id = w.account_id;
