@@ -47,26 +47,26 @@ Core capabilities include:
 # Repository Structure
 
 The project is organized into progressive SQL modules.
-01_Basics.sql
-Core query structure including SELECT, WHERE, ORDER BY, and LIMIT.
-02_Aggregations.sql
-Metric generation using aggregate functions and grouped analysis.
-03_Joins.sql
-Relational analysis across multiple tables.
-04_Subqueries.sql
-Multi-step analysis using nested queries.
-05_Mixed_Problems.sql
-Business-focused SQL problem solving combining multiple techniques.
-06_CTEs.sql
-Structured multi-step queries using Common Table Expressions.
-07_Data_Cleaning.sql
-Transforming raw text and datetime fields into structured analytical data.
-08_Window_Functions.sql
-Advanced analytical techniques including running totals, ranking, lag analysis, and percentiles.
-09_Advanced_SQL.sql
-Advanced SQL patterns including UNION, SELF JOIN, FULL OUTER JOIN, and query optimization techniques.
-10_Sales_Analysis_Project.sql
-Business analysis of customer activity, sales performance, and revenue trends.
+- 01_Basics.sql
+- Core query structure including SELECT, WHERE, ORDER BY, and LIMIT.
+- 02_Aggregations.sql
+- Metric generation using aggregate functions and grouped analysis.
+- 03_Joins.sql
+- Relational analysis across multiple tables.
+- 04_Subqueries.sql
+- Multi-step analysis using nested queries.
+- 05_Mixed_Problems.sql
+- Business-focused SQL problem solving combining multiple techniques.
+- 06_CTEs.sql
+- Structured multi-step queries using Common Table Expressions.
+- 07_Data_Cleaning.sql
+- Transforming raw text and datetime fields into structured analytical data.
+- 08_Window_Functions.sql
+- Advanced analytical techniques including running totals, ranking, lag analysis, and percentiles.
+- 09_Advanced_SQL.sql
+- Advanced SQL patterns including UNION, SELF JOIN, FULL OUTER JOIN, and query optimization techniques.
+- 10_Sales_Analysis_Project.sql
+- Business analysis of customer activity, sales performance, and revenue trends.
 
 Each SQL file documents the analytical process including:
 
